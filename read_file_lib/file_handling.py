@@ -44,10 +44,10 @@ class FileWithConstantWidth():
             with open(self.path, "r") as file:
                 pass
         except FileNotFoundError:
-            print("No file")
+            print("No file was found!")
             self.create_empty_file()
 
-    def get_value(self, block: str, field: str, transaction_no=0):
+    def get_value(self, block: str, field: str, transaction_no: int = 0) -> str:
         """
         Retrieves the value of a specified field from a file.
 
@@ -279,11 +279,11 @@ class Field():
         self.name = name
         self.data_type = data_type        
         if data_type == str:
-            self.whitespace = "_"
+            self.whitespace = " "
         elif data_type == int:
             self.whitespace = "0"
         else:
-            self.whitespace = "."
+            self.whitespace = " "
         self.update_value(value)
 
     def get_placeholder(self) -> str:

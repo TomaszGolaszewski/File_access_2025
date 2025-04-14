@@ -4,6 +4,7 @@
 
 from . import file_handling
 
+ALLOWED_CURRENCES = ["PLN", "USD", "EUR"]
 
 class QuestionBase:
     def __init__(self, kw={}):
@@ -15,7 +16,7 @@ class QuestionBase:
         """Handle all logic for current question.
         Overwrite to build new question.
         """
-        print("not overwritten process_question")
+        raise RuntimeError("It is required that the derived class provides an implementation of the process question.")
 
     def switch_scene(self, next_scene):
         """Set next scene object."""
@@ -33,9 +34,11 @@ class StartQuestion(QuestionBase):
 Enter the file name with extension (enter "exit" to exit, leave empty to use demo.txt):
 >>>"""
         answer = input(question)
-        if answer == "exit": self.terminate()
+        if answer == "exit": 
+            self.terminate()
         else: 
-            if not answer: answer = "demo.txt"
+            if not answer: 
+                answer = "demo.txt"
             file_handling.FileWithConstantWidth(answer) # checks if does file exist, create if it doesn't
             self.switch_scene(ChooseFunctionQuestion({'path': answer}))
 
@@ -91,16 +94,17 @@ class GetValueQuestionTransaction(QuestionBase):
                               
 class GetValueQuestionField(QuestionBase):
     def process_question(self):
-        question = """Which field do you want to see?
+        path = self.kw.get("path")
+        file = file_handling.FileWithConstantWidth(path)
+        block = self.kw.get("block")
+        fields_list = getattr(file, block).fields_list
+        question = f"""Which field do you want to see {fields_list}?
 >>>"""
         field = input(question)
         if field == "exit": 
             self.terminate()
         else:
-            block = self.kw.get("block")
             transaction_no = self.kw.get("transaction_no")
-            path = self.kw.get("path")
-            file = file_handling.FileWithConstantWidth(path)
             print("\nAnswer from file => ", file.get_value(block, field, transaction_no), "\n")
             self.switch_scene(StartQuestion({}))
 
@@ -119,17 +123,19 @@ class AddTransactionQuestionAmount(QuestionBase):
 
 class AddTransactionQuestionCurrency(QuestionBase):
     def process_question(self):
-        question = """Enter currency (PLN, USD, EUR)?
+        question = f"""Enter currency {ALLOWED_CURRENCES}?
 >>>"""
         currency = input(question)
         if currency == "exit": 
             self.terminate()
-        elif currency in ["PLN", "USD", "EUR"]:
+        elif currency in ALLOWED_CURRENCES:
             path = self.kw.get("path")
             amount = float(self.kw.get("amount"))
             file = file_handling.FileWithConstantWidth(path)
             print(file.add_transaction(amount, currency))
             self.switch_scene(StartQuestion({}))
+        else:
+            print("Invalid currency!")
 
 # ===== UPDATE VALUE ========================================== 
 
