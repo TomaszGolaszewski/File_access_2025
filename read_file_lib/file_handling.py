@@ -2,10 +2,8 @@
 # By Tomasz Gołaszewski
 # 2025.04.14
 
-import logging
 
-
-class FileWithConstantWidth():
+class FileWithConstantWidth:
     def __init__(self, path: str):
         """
         Initializing and building the file object structure.
@@ -41,8 +39,9 @@ class FileWithConstantWidth():
         ])
  
         try:
-            with open(self.path, "r") as file:
-                pass
+            with open(self.path, "r"):
+                # for check if file exists
+                pass 
         except FileNotFoundError:
             print("No file was found!")
             self.create_empty_file()
@@ -191,7 +190,8 @@ class FileWithConstantWidth():
         """
         if block_name == "transaction":
             counter = int(self.transaction.get_field_value_from_line("Counter", line))
-            if counter != transaction_no: return False
+            if counter != transaction_no:
+                return False
         return True
     
     def drop_payload_to_file(self, payload: str):
@@ -216,7 +216,7 @@ class FileWithConstantWidth():
 # ====== Lines ======================================================
 
 
-class Line():
+class Line:
     def __init__(self, id: int, fields_definition_list: list):
         self.fields_list = [field[2] for field in fields_definition_list]
         self.fields_dict = {field[2]: Field(*field) for field in fields_definition_list}
@@ -247,7 +247,8 @@ class Line():
             str: The value of the specified field if it exists or error message.
         """
 
-        if not self.fields_dict.get(field_name): return f"NO SUCH FIELD {field_name}"
+        if not self.fields_dict.get(field_name):
+            return f"NO SUCH FIELD {field_name}"
         return self.fields_dict[field_name].get_value_from_line(line)
 
     def insert_field_value_to_line(self, field_name: str, line: str, value) -> str:
@@ -262,21 +263,22 @@ class Line():
         Returns:
             str: The line with inserted new value or error message.
         """
-        if not self.fields_dict.get(field_name): return f"NO SUCH FIELD {field_name}"
+        if not self.fields_dict.get(field_name):
+            return f"NO SUCH FIELD {field_name}"
         return self.fields_dict[field_name].insert_value_to_line(line, value)
 
 
 # ====== FIELDS ======================================================
 
 
-class Field():
+class Field:
     def __init__(self, position_from: int, position_to: int, name: str, data_type=str, has_decimals=False, value=False):
         self.position_from = position_from
         self.position_to = position_to
         self.length = position_to - position_from + 1
         self.name = name
         self.data_type = data_type
-        self.has_decimals=has_decimals
+        self.has_decimals = has_decimals
         if data_type == int:
             self.whitespace = "0"
         else:
@@ -297,7 +299,7 @@ class Field():
             raise TypeError("Wrong type of inserted value! " + \
                     f"Should be: {self.data_type.__name__}, is: {type(value).__name__}, value: {value}")
         elif len(str(value)) > self.length:
-            raise ValueError(f"Value to long!" + \
+            raise ValueError("Value to long!" + \
                     f"Should be: {self.length}, is: {len(str(value))}, value: {value}")
         else:
             return str(value).rjust(self.length, self.whitespace)

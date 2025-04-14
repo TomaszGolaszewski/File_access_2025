@@ -34,13 +34,13 @@ class StartQuestion(QuestionBase):
 Enter the file name with extension (enter "exit" to exit, leave empty to use demo.txt):
 >>>"""
         answer = input(question)
-        if answer == "exit": 
+        if answer == "exit":
             self.terminate()
-        else: 
-            if not answer: 
+        else:
+            if not answer:
                 answer = "demo.txt"
             file_handling.FileWithConstantWidth(answer) # checks if does file exist, create if it doesn't
-            self.switch_scene(ChooseFunctionQuestion({'path': answer}))
+            self.switch_scene(ChooseFunctionQuestion({"path": answer}))
 
 # ===== FUNCTION ==========================================
 
@@ -54,13 +54,13 @@ class ChooseFunctionQuestion(QuestionBase):
 >>>"""
         answer = input(question)
         self.kw.update({"function": answer})
-        if answer == "exit": 
+        if answer == "exit":
             self.terminate()
-        elif answer in ["get"]: 
+        elif answer == "get":
             self.switch_scene(GetValueQuestionBlock(self.kw))
-        elif answer in ["add"]: 
+        elif answer == "add":
             self.switch_scene(AddTransactionQuestionAmount(self.kw))
-        elif answer in ["update"]: 
+        elif answer == "update":
             self.switch_scene(UpdateValueQuestionField(self.kw))
         else:
             print("Invalid command!")
@@ -76,11 +76,11 @@ class GetValueQuestionBlock(QuestionBase):
 >>>"""
         answer = input(question)
         self.kw.update({"block": answer})
-        if answer == "exit": 
+        if answer == "exit":
             self.terminate()
-        elif answer in ["header", "footer"]: 
+        elif answer in ["header", "footer"]:
             self.switch_scene(GetValueQuestionField(self.kw))
-        elif answer == "transaction": 
+        elif answer == "transaction":
             self.switch_scene(GetValueQuestionTransaction(self.kw))
         else:
             print("Invalid block name!")
@@ -90,9 +90,9 @@ class GetValueQuestionTransaction(QuestionBase):
         question = """Which transaction number (int type)?
 >>>"""
         answer = input(question)
-        if answer == "exit": 
+        if answer == "exit":
             self.terminate()
-        elif answer.isnumeric(): 
+        elif answer.isnumeric():
             self.kw.update({"transaction_no": int(answer)})
             self.switch_scene(GetValueQuestionField(self.kw))
         else:
@@ -107,7 +107,7 @@ class GetValueQuestionField(QuestionBase):
         question = f"""Which field do you want to see {fields_list}?
 >>>"""
         field = input(question)
-        if field == "exit": 
+        if field == "exit":
             self.terminate()
         elif field in fields_list:
             transaction_no = self.kw.get("transaction_no")
@@ -120,21 +120,21 @@ class GetValueQuestionField(QuestionBase):
 
 class AddTransactionQuestionAmount(QuestionBase):
     def process_question(self):
-        question = """Enter value (float type)?
+        question = """Enter transaction amount (float type):
 >>>"""
         answer = input(question)
-        if answer == "exit": 
+        if answer == "exit":
             self.terminate()
-        else: 
+        else:
             self.kw.update({"amount": answer})
             self.switch_scene(AddTransactionQuestionCurrency(self.kw))
 
 class AddTransactionQuestionCurrency(QuestionBase):
     def process_question(self):
-        question = f"""Enter currency {ALLOWED_CURRENCES}?
+        question = f"""Enter currency {ALLOWED_CURRENCES}:
 >>>"""
         currency = input(question)
-        if currency == "exit": 
+        if currency == "exit":
             self.terminate()
         elif currency in ALLOWED_CURRENCES:
             path = self.kw.get("path")
@@ -151,11 +151,11 @@ class UpdateValueQuestionField(QuestionBase):
     def process_question(self):
         path = self.kw.get("path")
         file = file_handling.FileWithConstantWidth(path)
-        fields_list = getattr(file, 'header').fields_list
+        fields_list = getattr(file, "header").fields_list
         question = f"""Which field do you want to update {fields_list}?
 >>>"""
         field = input(question)
-        if field == "exit": 
+        if field == "exit":
             self.terminate()
         elif field in fields_list:
             self.kw.update({"field": field})
@@ -168,7 +168,7 @@ class UpdateValueQuestionValue(QuestionBase):
         question = """Enter value:
 >>>"""
         value = input(question)
-        if value == "exit": 
+        if value == "exit":
             self.terminate()
         else:
             path = self.kw.get("path")
