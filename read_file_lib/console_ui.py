@@ -62,6 +62,8 @@ class ChooseFunctionQuestion(QuestionBase):
             self.switch_scene(AddTransactionQuestionAmount(self.kw))
         elif answer in ["update"]: 
             self.switch_scene(UpdateValueQuestionField(self.kw))
+        else:
+            print("Invalid command!")
 
 # ===== GET VALUE ==========================================        
 
@@ -80,6 +82,8 @@ class GetValueQuestionBlock(QuestionBase):
             self.switch_scene(GetValueQuestionField(self.kw))
         elif answer == "transaction": 
             self.switch_scene(GetValueQuestionTransaction(self.kw))
+        else:
+            print("Invalid block name!")
 
 class GetValueQuestionTransaction(QuestionBase):
     def process_question(self):
@@ -91,6 +95,8 @@ class GetValueQuestionTransaction(QuestionBase):
         elif answer.isnumeric(): 
             self.kw.update({"transaction_no": int(answer)})
             self.switch_scene(GetValueQuestionField(self.kw))
+        else:
+            print("Enter number!")
                               
 class GetValueQuestionField(QuestionBase):
     def process_question(self):
@@ -103,10 +109,12 @@ class GetValueQuestionField(QuestionBase):
         field = input(question)
         if field == "exit": 
             self.terminate()
-        else:
+        elif field in fields_list:
             transaction_no = self.kw.get("transaction_no")
             print("\nAnswer from file => ", file.get_value(block, field, transaction_no), "\n")
             self.switch_scene(StartQuestion({}))
+        else:
+            print("Invalid field name!")
 
 # ===== ADD TRANSACTION ========================================== 
 
@@ -141,14 +149,19 @@ class AddTransactionQuestionCurrency(QuestionBase):
 
 class UpdateValueQuestionField(QuestionBase):
     def process_question(self):
-        question = """Which field do you want to update?
+        path = self.kw.get("path")
+        file = file_handling.FileWithConstantWidth(path)
+        fields_list = getattr(file, 'header').fields_list
+        question = f"""Which field do you want to update {fields_list}?
 >>>"""
         field = input(question)
         if field == "exit": 
             self.terminate()
-        else:
+        elif field in fields_list:
             self.kw.update({"field": field})
             self.switch_scene(UpdateValueQuestionValue(self.kw))
+        else:
+            print("Invalid field name!")
 
 class UpdateValueQuestionValue(QuestionBase):
     def process_question(self):

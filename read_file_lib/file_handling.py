@@ -18,7 +18,7 @@ class FileWithConstantWidth():
 
         # building the object
         # class Line(id, [Fields' inits' arguments' list])
-        # class Field(position_from: int, position_to: int, name: str, data_type=str, value=False)
+        # class Field(position_from: int, position_to: int, name: str, data_type=str, has_decimals=False, value=False)
         self.header = Line(1, [
             (1, 2, "Field ID", int), 
             (3, 30, "Name"), 
@@ -29,14 +29,14 @@ class FileWithConstantWidth():
         self.transaction = Line(2, [
             (1, 2, "Field ID", int),
             (3, 8, "Counter", int),
-            (9, 20, "Amount", int),
+            (9, 20, "Amount", int, True),
             (21, 23, "Currency"),
             (24, 120, "Reserved", False),
         ])
         self.footer = Line(3, [
             (1, 2, "Field ID", int),
             (3, 8, "Total Counter", int),
-            (9, 20, "Control sum", int),
+            (9, 20, "Control sum", int, True),
             (21, 120, "Reserved", False),
         ])
  
@@ -120,7 +120,7 @@ class FileWithConstantWidth():
         self.drop_payload_to_file(new_file_content)
         return "DONE!"
 
-    def add_transaction(self, amount_float: float, currency: str):
+    def add_transaction(self, amount: float, currency: str):
         """
         Adds a new transaction to the file and updates the footer with the new total counter and control sum.
 
@@ -131,7 +131,7 @@ class FileWithConstantWidth():
         - Updates the footer with the total counter and control sum.
 
         Args:
-            amount_float (float): The transaction amount in floating-point format. Must be non-negative.
+            amount (float): The transaction amount in floating-point format. Must be non-negative.
             currency (str): The currency of the transaction. Supported currencies are "PLN", "EUR", and "USD".
 
         Returns:
@@ -140,12 +140,10 @@ class FileWithConstantWidth():
         Raises:
             ValueError: If the amount is negative or the currency is not one of the supported options.
         """
-        if amount_float < 0:
+        if amount < 0:
             raise ValueError("Amount can't be negative!")
         if currency not in ["PLN", "EUR", "USD"]:
             raise ValueError("Wrong currency!")
-        format_amount = lambda x: int(x * 100) # convert float into int with decimals
-        amount = format_amount(amount_float)
         new_file_content = ""
         amount_sum = amount
         counter = 0
@@ -272,15 +270,14 @@ class Line():
 
 
 class Field():
-    def __init__(self, position_from: int, position_to: int, name: str, data_type=str, value=False):
+    def __init__(self, position_from: int, position_to: int, name: str, data_type=str, has_decimals=False, value=False):
         self.position_from = position_from
         self.position_to = position_to
         self.length = position_to - position_from + 1
         self.name = name
-        self.data_type = data_type        
-        if data_type == str:
-            self.whitespace = " "
-        elif data_type == int:
+        self.data_type = data_type
+        self.has_decimals=has_decimals
+        if data_type == int:
             self.whitespace = "0"
         else:
             self.whitespace = " "
@@ -294,7 +291,9 @@ class Field():
     def check_and_format_value(self, value):
         if not value:
             return self.get_placeholder()
-        elif type(value) != self.data_type:
+        if self.has_decimals:
+            value = int(value * 100)
+        if type(value) != self.data_type:
             raise TypeError("Wrong type of inserted value! " + \
                     f"Should be: {self.data_type.__name__}, is: {type(value).__name__}, value: {value}")
         elif len(str(value)) > self.length:
@@ -310,7 +309,11 @@ class Field():
     def get_value_from_line(self, line: str) -> str:
         if len(line) != 121: # 120 + end of line
             raise ImportError
-        return self.data_type(line[self.position_from-1: self.position_to])
+        value = self.data_type(line[self.position_from-1: self.position_to])
+        if self.has_decimals:
+            return value / 100
+        else:
+            return value
 
     def insert_value_to_line(self, line: str, value) -> str:     
         if len(line) != 121: # 120 + end of line
