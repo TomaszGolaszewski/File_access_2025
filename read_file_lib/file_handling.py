@@ -1,3 +1,7 @@
+# Handle file in Python - demo
+# By Tomasz Gołaszewski
+# 2025.04.14
+
 import logging
 
 
@@ -25,26 +29,13 @@ class FileWithConstantWidth():
             (9, 20, "Control sum", int),
             (21, 120, "Reserved", False),
         ])
-        print("File init")
-
-        # print(self.insert_value("header", "Name", "Tomasz", 1))
-        print(self.add_transaction(323.4567,  "PLN"))
-        # print(self.get_value("transaction", "Amount", 3))
+ 
         try:
             with open(self.path, "r") as file:
                 pass
-        #         # for line in file:
-        #         #     print(line)
-        #         line = file.readline()
-        #         print(self.header.get_field_value_from_line("Name", line))
-        #         line = self.header.insert_field_value_to_line("Name", line, "Tomasz")
-        #         print(self.header.get_field_value_from_line("Name", line))
         except FileNotFoundError:
             print("No file")
             self.create_empty_file()
-        #     # with open(self.path, "w") as file:
-        #     #     for i in range(5):
-        #     #         file.write(str(i+1)*10 + "\n")
 
     def get_value(self, block: str, field: str, transaction_no=0):
         if not hasattr(self, block):
@@ -55,7 +46,7 @@ class FileWithConstantWidth():
                 for line in file:
                     if block_id == line[0:2] and self.transaction_check(block, line, transaction_no):
                         return getattr(self, block).get_field_value_from_line(field, line)
-                return f"NO SUCH LINE {block}"
+                return f"NO SUCH LINE {block} " + str(transaction_no) if block_id == "02" else ""
         except FileNotFoundError:
             return f"NO SUCH FILE {self.path}"
         
@@ -133,9 +124,9 @@ class FileWithConstantWidth():
             file.write(payload)
 
     def create_empty_file(self):
-        print("create_empty_file")
         new_file_content = self.header.create_empty_line() + self.footer.create_empty_line()
         self.drop_payload_to_file(new_file_content)
+        print("New file created!")
 
 
 # ====== Lines ======================================================

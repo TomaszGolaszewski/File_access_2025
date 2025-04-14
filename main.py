@@ -1,10 +1,8 @@
-# import read_file_lib as mylib
-from read_file_lib.file_handling import FileWithConstantWidth
-# from read_file_lib import * 
+# Handle file in Python - demo
+# By Tomasz Gołaszewski
+# 2025.04.14
 
-def run_demo():
-    file = FileWithConstantWidth("c.txt")
+import read_file_lib
 
 if __name__ == '__main__':
-    run_demo()
-    # print(type(123456789012).__name__)
+    read_file_lib.console_ui.main_program()
