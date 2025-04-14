@@ -7,21 +7,22 @@ from . import file_handling
 
 class QuestionBase:
     def __init__(self, kw={}):
-    # initialization of the scene
-        self.next = self
+        """Initialization of the question."""
+        self.next = self # unless changed, next question is this question
         self.kw = kw # some context to pass between questions
     
     def process_question(self):
-    # handle all received events
-    # question logic for the scene
+        """Handle all logic for current question.
+        Overwrite to build new question.
+        """
         print("not overwritten process_question")
 
     def switch_scene(self, next_scene):
-    # change scene
+        """Set next scene object."""
         self.next = next_scene
     
     def terminate(self):
-    # close the game by changing scene tu None
+        """Closes questions sequence by seting next question to None."""
         self.switch_scene(None)
 
 # ===== FILE ==========================================
@@ -29,11 +30,12 @@ class QuestionBase:
 class StartQuestion(QuestionBase):
     def process_question(self):
         question = """Hello in my demo program :)
-Enter the file name with extension (enter "exit" to exit):
+Enter the file name with extension (enter "exit" to exit, leave empty to use demo.txt):
 >>>"""
         answer = input(question)
         if answer == "exit": self.terminate()
         else: 
+            if not answer: answer = "demo.txt"
             file_handling.FileWithConstantWidth(answer) # checks if does file exist, create if it doesn't
             self.switch_scene(ChooseFunctionQuestion({'path': answer}))
 
@@ -126,9 +128,7 @@ class AddTransactionQuestionCurrency(QuestionBase):
             path = self.kw.get("path")
             amount = float(self.kw.get("amount"))
             file = file_handling.FileWithConstantWidth(path)
-            result = file.add_transaction(amount, currency)
-            if result: print(result)
-            else: print("DONE!")
+            print(file.add_transaction(amount, currency))
             self.switch_scene(StartQuestion({}))
 
 # ===== UPDATE VALUE ========================================== 
@@ -155,14 +155,19 @@ class UpdateValueQuestionValue(QuestionBase):
             path = self.kw.get("path")
             field = self.kw.get("field")
             file = file_handling.FileWithConstantWidth(path)
-            result = file.insert_value("header", field, value)
-            if result: print(result)
-            else: print("DONE!")
+            print(file.insert_value("header", field, value))
             self.switch_scene(StartQuestion({}))
 
 # ===== MAIN PROGRAM ==========================================
 
 def main_program():
+    """
+    Executes the main program logic by processing a sequence of questions.
+
+    This function starts with an initial question and iteratively processes 
+    each question while transitioning to the next one. The loop continues until 
+    there are no more questions to handle.
+    """
     active_question = StartQuestion()
 
     # main loop

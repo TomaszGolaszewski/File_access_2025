@@ -7,8 +7,18 @@ import logging
 
 class FileWithConstantWidth():
     def __init__(self, path: str):
+        """
+        Initializing and building the file object structure.
+        Creates empty file in case the file does not exist.
+
+        Args:
+            path (str): Path to file.
+        """
         self.path = path
 
+        # building the object
+        # class Line(id, [Fields' inits' arguments' list])
+        # class Field(position_from: int, position_to: int, name: str, data_type=str, value=False)
         self.header = Line(1, [
             (1, 2, "Field ID", int), 
             (3, 30, "Name"), 
@@ -38,6 +48,24 @@ class FileWithConstantWidth():
             self.create_empty_file()
 
     def get_value(self, block: str, field: str, transaction_no=0):
+        """
+        Retrieves the value of a specified field from a file.
+
+        This function opens a file, iterates through its lines, and searches for the specified block and fild
+        (and optionally transaction number). If found, it retrieves the value of the requested field from the line.
+        Raises an error if the block name is invalid and handles file-related errors gracefully.
+
+        Args:
+            block (str): The name of the block to search ("header", "transaction", or "footer").
+            field (str): The name of the field which value is to be retrieved.
+            transaction_no (int, optional): The transaction number to locate within the transaction block. Defaults to 0.
+
+        Returns:
+            str: The value of the specified field if found, or a message indicating the result of the search.
+
+        Raises:
+            ValueError: If the block name is invalid.
+        """
         if not hasattr(self, block):
             raise NameError("Wrong block name!")
         block_id = getattr(self, block).id
@@ -51,9 +79,27 @@ class FileWithConstantWidth():
             return f"NO SUCH FILE {self.path}"
         
     def insert_value(self, block: str, field: str, value, transaction_no=0):
+        """
+        Inserts a specified value into a field within the lines of a file.
+
+        This function opens a file, iterates through its lines, and attempts to insert a given
+        value into the specified field of a particular block. Certain blocks (e.g., "transaction"
+        and "footer") are restricted from modification, and an error is raised for invalid block names.
+
+        Args:
+            block (str): The name of the block to modify ("header", "transaction", or "footer").
+            field (str): The name of the field in which the value will be inserted.
+            value (Any): The value to be inserted into the specified field.
+            transaction_no (int, optional): The transaction number to find, if applicable. Defaults to 0.
+
+        Returns:
+            str: A message indicating the result of the process or comments about errors during the search.
+
+        Raises:
+            ValueError: If the block name is invalid.
+        """
         if not hasattr(self, block):
             raise NameError("Wrong block name!")
-            # return f"NO SUCH LINE {block}"
         if block == "transaction":
             # TODO: possible implementation of changes in transactions in the future
             return "YOU CAN'T CHANGE TRANSACTIONS' HISTORY!"
@@ -66,17 +112,34 @@ class FileWithConstantWidth():
                 for line in file:
                     if block_id == line[0:2] and self.transaction_check(block, line, transaction_no):
                         new_file_content += getattr(self, block).insert_field_value_to_line(field, line, value)
-                        # print(getattr(self, block).get_field_value_from_line(field, line))
-                        # return f"VALUE {value} INSERTED :)"
                     else:
                         new_file_content += line
-                # return f"NO SUCH LINE {block}"
         except FileNotFoundError:
             return f"NO SUCH FILE {self.path}"
         
         self.drop_payload_to_file(new_file_content)
+        return "DONE!"
 
     def add_transaction(self, amount_float: float, currency: str):
+        """
+        Adds a new transaction to the file and updates the footer with the new total counter and control sum.
+
+        This function validates the transaction amount and currency, calculates the formatted amount,
+        iterates through the existing file content, and performs the following actions:
+        - Copies header and transaction lines.
+        - Inserts a new transaction with the provided details.
+        - Updates the footer with the total counter and control sum.
+
+        Args:
+            amount_float (float): The transaction amount in floating-point format. Must be non-negative.
+            currency (str): The currency of the transaction. Supported currencies are "PLN", "EUR", and "USD".
+
+        Returns:
+            str: A message indicating the result of the process or comments about errors during the search.
+        
+        Raises:
+            ValueError: If the amount is negative or the currency is not one of the supported options.
+        """
         if amount_float < 0:
             raise ValueError("Amount can't be negative!")
         if currency not in ["PLN", "EUR", "USD"]:
@@ -101,29 +164,52 @@ class FileWithConstantWidth():
                         new_line = self.transaction.insert_field_value_to_line("Counter", new_line, counter+1)
                         new_line = self.transaction.insert_field_value_to_line("Amount", new_line, amount)
                         new_line = self.transaction.insert_field_value_to_line("Currency", new_line, currency)
-                        new_file_content += new_line
+                        new_file_content += new_line # replace
                         # create new footer
                         new_line = self.footer.create_empty_line()
                         new_line = self.footer.insert_field_value_to_line("Total Counter", new_line, counter+1)
                         new_line = self.footer.insert_field_value_to_line("Control sum", new_line, amount_sum)
-                        new_file_content += new_line
+                        new_file_content += new_line # replace
 
         except FileNotFoundError:
             return f"NO SUCH FILE {self.path}"
         
         self.drop_payload_to_file(new_file_content)
+        return "DONE!"
         
-    def transaction_check(self, block_name, line, transaction_no=0):
+    def transaction_check(self, block_name: str, line: str, transaction_no: int = 0) -> bool:
+        """
+        Checks if the given line is the transaction line we are looking for.
+        For non-transaction lines returns True.
+
+        Args:
+            block_name (str): The name of the block: "header", "transaction" or "footer".
+            line (str): File line.
+            transaction_no (int, optional): The transaction number to validate against. Defaults to 0.
+
+        Returns:
+            bool: True if the line "Counter" field value matches checked transaction number \
+                        or the block is non-transaction type, False otherwise.
+        """
         if block_name == "transaction":
             counter = int(self.transaction.get_field_value_from_line("Counter", line))
             if counter != transaction_no: return False
         return True
     
-    def drop_payload_to_file(self, payload):
+    def drop_payload_to_file(self, payload: str):
+        """
+        Writes the provided payload to a file at the path specified in object attribute.
+
+        Args:
+            payload (str): The content to be written to the file.
+        """
         with open(self.path, "w") as file:
             file.write(payload)
 
     def create_empty_file(self):
+        """
+        Creates a new file with empty header's and footer's placeholders.
+        """
         new_file_content = self.header.create_empty_line() + self.footer.create_empty_line()
         self.drop_payload_to_file(new_file_content)
         print("New file created!")
@@ -133,23 +219,51 @@ class FileWithConstantWidth():
 
 
 class Line():
-    def __init__(self, id, fields_definition_list):
+    def __init__(self, id: int, fields_definition_list: list):
         self.fields_list = [field[2] for field in fields_definition_list]
         self.fields_dict = {field[2]: Field(*field) for field in fields_definition_list}
         # assign line ID to Line object (self.id) and to Field object (update_value)
         self.id = self.fields_dict[self.fields_list[0]].update_value(id)
 
     def create_empty_line(self):
+        """
+        Creates a new line with empty fields' placeholders.
+
+        Returns:
+            str: String with new line. End of line symbol is added at end. 
+        """
         result = ""
         for field_name in self.fields_list:
             result += self.fields_dict[field_name].value
         return result + "\n"
 
-    def get_field_value_from_line(self, field_name, line):
+    def get_field_value_from_line(self, field_name: str, line: str) -> str:
+        """
+        Retrieves the value of a specified field from a given line.
+
+        Args:
+            field_name (str): The name of the field whose value is to be retrieved.
+            line (str): The line of data from which to extract the field value.
+
+        Returns:
+            str: The value of the specified field if it exists or error message.
+        """
+
         if not self.fields_dict.get(field_name): return f"NO SUCH FIELD {field_name}"
         return self.fields_dict[field_name].get_value_from_line(line)
 
-    def insert_field_value_to_line(self, field_name, line, value):
+    def insert_field_value_to_line(self, field_name: str, line: str, value) -> str:
+        """
+        Inserts the value of a specified field to given line.
+
+        Args:
+            field_name (str): The name of the field whose value will be inserted.
+            line (str): The line of data.
+            value (Any): The value which will be inserted.
+
+        Returns:
+            str: The line with inserted new value or error message.
+        """
         if not self.fields_dict.get(field_name): return f"NO SUCH FIELD {field_name}"
         return self.fields_dict[field_name].insert_value_to_line(line, value)
 
@@ -172,12 +286,10 @@ class Field():
             self.whitespace = "."
         self.update_value(value)
 
-    # def __str__(self) -> str:
-    def get_placeholder(self):
+    def get_placeholder(self) -> str:
         if hasattr(self, "value"):
             return self.value
         return  self.whitespace * self.length
-        # return self.name[0] * self.length
 
     def check_and_format_value(self, value):
         if not value:
